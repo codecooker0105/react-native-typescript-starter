@@ -1,5 +1,7 @@
 import { action, computed, observable, runInAction } from 'mobx';
-import { AsyncStorage } from 'react-native';
+import { Alert, AsyncStorage } from 'react-native';
+import { Facebook } from 'expo';
+import { FACEBOOK_ID } from '../../config/app.config';
 import request from '../../utils/request';
 import userStore from '../user/user.store';
 
@@ -8,6 +10,15 @@ export class AuthStore {
 
     @observable authChecked = false;
     @observable token: string;
+
+    @action async facebookLogin() {
+        const { type, token } = await Facebook.logInWithReadPermissionsAsync(FACEBOOK_ID, {
+            permissions: ['public_profile'],
+        });
+
+        if (type !== 'success') return Alert.alert('Error while authenticating to facebook');
+        await this.signIn(token);
+    }
 
     @action async checkAuth() {
         await this.getToken();

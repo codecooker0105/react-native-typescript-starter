@@ -12,10 +12,18 @@ describe('UserStore', () => {
     });
 
     it('should initialize user store with saved user', async () => {
+        const spy = jest.spyOn(userStore, 'setUser');
         await localStorage.setItem(UserStore.USER_DATA_KEY, JSON.stringify({ name: 'dima' }));
         await userStore.initialize();
+        expect(spy).toHaveBeenCalledTimes(1);
         expect(userStore.user).toEqual({ name: 'dima' })
     });
+
+    it('should not initializer user when no user found in storage', async () => {
+        await userStore.initialize();
+        expect(userStore.user).toBeUndefined();
+    });
+
 
     it('should store user to store instance and local storage', async () => {
         const demoUser = {

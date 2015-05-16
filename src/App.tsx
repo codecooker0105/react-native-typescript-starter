@@ -1,23 +1,46 @@
+import { observable } from 'mobx';
 import * as React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { observer, Provider } from 'mobx-react';
+import { createRootNavigator } from './routes';
+import { APP_STORES } from './stores';
+import { StyleProvider } from 'native-base';
+import { AppLoading, Font } from 'expo';
+import authStore from './stores/auth/auth.store';
+import getTheme from './theme/components';
 
+@observer
 export default class App extends React.Component<any, any> {
+    @observable ready = false;
+    constructor(props) {
+        super(props);
+
+    }
+
+    async componentWillMount() {
+        await this.loadFonts();
+        await authStore.checkAuth();
+
+        this.ready = true;
+    }
+
+    async loadFonts() {
+        await Font.loadAsync({
+            Roboto: require("native-base/Fonts/Roboto.ttf"),
+            Ionicons: require("@expo/vector-icons/fonts/Ionicons.ttf")
+        });
+    }
+
     render() {
+        if (!this.ready) return <AppLoading />;
+        const Layout = createRootNavigator(authStore.isLoggedIn);
+
         return (
-            <View style={styles.container}>
-                <Text>DIMA</Text>
-                <Text>Changes you make will automatically reload.</Text>
-                <Text>Shake your phone to open the developer menu.</Text>
-            </View>
+            <Provider { ...APP_STORES }>
+                <StyleProvider style={getTheme()}>
+                    <Layout />
+                </StyleProvider>
+            </Provider>
         )
     }
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-    }
-});

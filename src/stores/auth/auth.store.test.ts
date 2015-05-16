@@ -1,10 +1,15 @@
 import MockAdapter = require('axios-mock-adapter');
 import { AsyncStorageMock } from '../../../__mocks__/AsyncStorage';
-import { API_ROOT } from '../../config/app.config';
 import userStore from '../user/user.store';
 import { default as authStore, AuthStore } from './auth.store';
 import request from '../../utils/request';
-import axios from 'axios';
+import { Facebook } from 'expo';
+jest.mock('expo', () => ({
+        Facebook: {
+            logInWithReadPermissionsAsync: jest.fn()
+        }
+    }
+));
 
 describe('AuthenticationStore', () => {
    let store: AuthStore;
@@ -14,6 +19,29 @@ describe('AuthenticationStore', () => {
    beforeEach(() => {
       store = new AuthStore();
    });
+
+   describe('Facebook authentication', () => {
+      beforeEach(() => {
+          Facebook.logInWithReadPermissionsAsync.mockClear();
+      });
+
+       it('should fail authenticate with facebook sdk', async () => {
+           Facebook.logInWithReadPermissionsAsync.mockReturnValue({ type: 'fail' });
+           await store.facebookLogin();
+
+           expect(Facebook.logInWithReadPermissionsAsync).toHaveBeenCalledTimes(1);
+       });
+
+       it('should authenticate with facebook sdk', async () => {
+           Facebook.logInWithReadPermissionsAsync.mockReturnValue({ type: 'success', token: '123' });
+           store.signIn = jest.fn();
+
+           await store.facebookLogin();
+           expect(store.signIn).toHaveBeenCalledWith('123');
+           expect(Facebook.logInWithReadPermissionsAsync).toHaveBeenCalledTimes(1);
+       });
+   });
+
 
    it('should get token from local storage if available', async () => {
       const token = await store.getToken();
